@@ -10,30 +10,30 @@ import threading
 
 # argumentos
 if len(sys.argv) != 2:
-    print 'Uso: python ' + sys.argv[0] + ' <executavel>'
+    print(f'Uso: python {sys.argv[0]} <executavel>')
     sys.exit(1)
 
 # abre arquivo de resultados
 try:
     f = open('resultados.dat', 'w')
 except IOError:
-    print 'Nao foi possivel criar o arquivo \'resultados.dat\''
+    print('Nao foi possivel criar o arquivo \'resultados.dat\'')
     sys.exit(1)
 
 # nome do executavel
 prog = sys.argv[1]
 if prog[0:2] != './':
-    prog = './' + prog
+    prog = f'./{prog}'
 if os.path.exists(prog) == False:
-    print 'O arquivo executavel nao foi encontrado'
+    print('O arquivo executavel nao foi encontrado')
     sys.exit(1)
 
 # nome do arquivo com a instancia
 inst = 'vet-1000000.ins'
 n = 1000000
 if os.path.exists(inst) == False:
-    print 'O arquivo \'' + inst + '\' nao foi encontrado.'
-    print 'Execute este script no mesmo diretorio do arquivo \'' + inst + '\''
+    print(f'O arquivo \'{inst}\' nao foi encontrado.')
+    print(f'Execute este script no mesmo diretorio do arquivo \'{inst}\'')
     sys.exit(1)
 
 # Se demorar mais que 10 segundos,
@@ -49,8 +49,7 @@ class ProgramRunner(threading.Thread):
         self.finished = True
 
     def run(self):
-        self.p = subprocess.Popen(self.cmd,
-                                  stdout = subprocess.PIPE)
+        self.p = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
         self.output = self.p.communicate()[0].strip().split(' ')
 
     def run_program(self):
@@ -67,55 +66,34 @@ class ProgramRunner(threading.Thread):
         else:
             return [str(self.timeout)]
 
+def write_row_fmt(k, t1, t2, t3, f=sys.stdout):
+    print(f'{k:>8s}{t1:>14s}{t2:>14s}{t3:>14s}', file=f)
+
 # Cabecalho da saida no terminal
 def print_header():
-    print ''
-    s = 'k'.rjust(8)
-    s += 'Tempo Met. 1'.rjust(14)
-    s += 'Tempo Met. 2'.rjust(14)
-    s += 'Tempo Met. 3'.rjust(14)
-    print s
+    t1, t2, t3 = [f'Tempo Met. {i+1}' for i in range(3)]
+    write_row_fmt('k', t1, t2, t3)
 
 # Impressao de uma linha no terminal
 def print_row(k, t1, t2, t3):
-    if t1 < tmax:
-        st1 = str("%.6f"%t1)
-    else:
-        st1 = '--------'
-    st2 = str("%.6f"%t2)
-    st3 = str("%.6f"%t3)
-    if t1 < t2 and t1 < t3:
-        st1 = '*' + st1 + '*'
-    elif t2 < t1 and t2 < t3:
-        st2 = '*' + st2 + '*'
-    else:
-        st3 = '*' + st3 + '*'
-    s = str(k).rjust(8)
-    s += st1.rjust(14)
-    s += st2.rjust(14)
-    s += st3.rjust(14)
-    print s
+    write_row(sys.stdout, k, t1, t2, t3)
 
 # Escrita de uma linha no arquivo de resultados
 def write_row(f, k, t1, t2, t3):
     if t1 < tmax:
-        st1 = str("%.6f"%t1)
+        st1 = f'{t1:.6f}'
     else:
         st1 = '--------'
-    st2 = str("%.6f"%t2)
-    st3 = str("%.6f"%t3)
+    st2 = f'{t2:.6f}'
+    st3 = f'{t3:.6f}'
     if t1 < t2 and t1 < t3:
-        st1 = '*' + st1 + '*'
+        st1 = f'*{st1}*'
     elif t2 < t1 and t2 < t3:
-        st2 = '*' + st2 + '*'
+        st2 = f'*{st2}*'
     else:
-        st3 = '*' + st3 + '*'
-    s = str(k).rjust(8)
-    s += st1.rjust(14)
-    s += st2.rjust(14)
-    s += st3.rjust(14)
-    s += '\n'
-    f.write(s)
+        st3 = f'*{st3}*'
+
+    write_row_fmt(k, st1, st2, st3, f=f)
 
 
 def sweep_range(r, run_slowest):
@@ -137,12 +115,12 @@ def sweep_range(r, run_slowest):
             try:
                 times[alg-1] = float(output[0])
             except ValueError:
-                print ''
-                print 'Saida invalida na execucao do programa ' + prog
-                print 'Instancia: ' + inst
-                print 'Metodo: ' + str(alg)
-                print 'k = ' + str(k)
-                print ''
+                print('')
+                print(f'Saida invalida na execucao do programa {prog}')
+                print(f'Instancia: {inst}')
+                print(f'Metodo: {alg}')
+                print(f'k = {k}')
+                print('')
                 sys.exit(1)
 
         if nrows % 20 == 0:
@@ -160,10 +138,10 @@ sweep_range(range(300000, 300005), False)
 sweep_range(range(700000, 700005), False)
 sweep_range(range(999996, 1000001), False)
 
-print ''
-print 'Os melhores tempos para cada valor de k foram destacados com asteriscos.'
-print 'O Metodo 1 foi omitido propositalmente para valores altos de k.'
-print 'Seus tempos de execucao sao grandes e os experimentos consumiriam muito tempo.'
-print ''
+print('')
+print('Os melhores tempos para cada valor de k foram destacados com asteriscos.')
+print('O Metodo 1 foi omitido propositalmente para valores altos de k.')
+print('Seus tempos de execucao sao grandes e os experimentos consumiriam muito tempo.')
+print('')
 
 f.close()
