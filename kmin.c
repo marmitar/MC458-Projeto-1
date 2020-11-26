@@ -1,5 +1,11 @@
-#include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
 
 /*
   Funcao para validar seus algoritmos.
@@ -47,57 +53,216 @@ double tempo();
 */
 void kmin_to_file(double *r, int k);
 
-int main(int argc, const char *argv[]){
 
+/* Atributos para GCC. */
+#ifdef __GNUC__
+#define attribute(...)	\
+	__attribute__((__VA_ARGS__))
+#else
+/* não faz nada em outros compiladores */
+#define attribute(...)
+#endif
+
+/* * * * * * * * * * */
+/* LEITURA DOS DADOS */
+
+/* Função executada sem problemas. */
+#define OK 	 0
+/* Resultado da função com erro genérico. */
+/* Erro específico guardado em `errno`. */
+#define ERR -1
+/* Erro especial para entradas inválidas. */
+#define ENTINV 0x1234
+
+static attribute(format(scanf, 3, 4), nonnull)
+/**
+ * Checked `fscanf`.
+ *
+ * Checa se o `fscanf` fez todas as leituras esperadas,
+ * como recebido pelo parâmetro `expect`.
+ *
+ * Retorna true em caso de sucesso. Para erros, o valor
+ * do erro é marcado em `errno` e retorna false.
+ */
+bool cfscanf(unsigned expect, FILE *restrict arquivo, const char *restrict fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	/* usa `vscanf` para tratar argumentos
+	variados com mais facilidade */
+	int rv = vfscanf(arquivo, fmt, args);
+	va_end(args);
+
+	/* erro de leitura */
+	if (rv < 0) {
+		return false;
+	}
+	/* leitura incompleta */
+	else if (rv < expect) {
+		errno = ENTINV;
+		return false;
+	}
+	return true;
+}
+
+typedef struct array {
+    size_t tam;
+    double dado[];
+} array_t;
+
+array_t *alloc_array(size_t tam) {
+    size_t fixo = offsetof(array_t, dado);
+    size_t dados = tam * sizeof(double);
+
+    array_t *arr = malloc(fixo + dados);
+    if (arr == NULL) return NULL;
+
+    arr->tam = tam;
+    return arr;
+}
+
+array_t *read_array(const char arquivo[]) {
+    FILE *arq = fopen(arquivo, "r");
+    if (arq == NULL) return NULL;
+
+    size_t tam = 0;
+    if (!cfscanf(1, arq, "%zu", &tam)) {
+        fclose(arq);
+        return NULL;
+    }
+
+    array_t *arr = alloc_array(tam);
+    if (arr == NULL) {
+        fclose(arq);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < tam; i++) {
+        if (!cfscanf(1, arq, "%lf", &arr->dado[i])) {
+            fclose(arq);
+            free(arr);
+            return NULL;
+        }
+    }
+    fclose(arq);
+    return arr;
+}
+
+// static attribute(nonull)
+// array_t *metodo_1(array_t *vetor, size_t k) {
+//     return vetor;
+// }
+
+static attribute(nonnull)
+/**
+ * Apresenta o erro marcado em `errno` na saída de erro.
+ */
+void imprime_erro(const char prog[]) {
+	/* erro especial nesse programa */
+	if (errno == ENTINV) {
+		fprintf(stderr, "%s: entrada inválida\n", prog);
+	/* erros gerais da libc */
+	} else {
+		perror(prog);
+	}
+}
+
+
+double get_time(void) {
+    struct timespec tp;
+    if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
+        return nan("");
+    }
+
+    double sec = (double) tp.tv_sec;
+    double nsec = (double) tp.tv_nsec;
+    return sec + (nsec / 1E9L);
+}
+
+
+typedef enum metodo {
+    LIMITES = 0,
+    BUSCA = 1,
+    QUICKSORT = 2,
+    HEAP = 3
+} metodo_t;
+
+typedef struct args {
+    const char *prog;
+    metodo_t metodo;
+    array_t *vetor;
+    size_t k;
+} args_t;
+
+bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     if (argc != 4) {
         if (argc == 3 && argv[2][0] != '0') {
             fprintf(stderr, "Uso Método 0: ./kmin <arq> 0\n");
-            return EXIT_FAILURE;
-        } else if(argc != 3) {
+            return false;
+        } else if (argc != 3) {
             fprintf(stderr, "Uso geral: ./kmin <arq> <metodo> <k>\n");
-            return EXIT_FAILURE;
+            return false;
         }
     }
     const char *prog = argv[0];
-    const char *nomearq = argv[1];
-    // char metodo = argv[2][0];
-    // int k;
-    // if (argc == 4) {
-    //     k = atoi(argv[3]);
-    // }
 
-    FILE *arq = fopen(nomearq, "r");
-    int n, i;
-    double *v;
-
-    int rv = fscanf(arq, "%d", &n);
-    if (rv < 0) {
-        perror(prog);
-        return EXIT_FAILURE;
-    } else if (rv < 1) {
-        fprintf(stderr, "%s: entrada inválida\n", prog);
-        return EXIT_FAILURE;
+    metodo_t metodo = argv[2][0] - '0';
+    if (metodo < 0 || metodo > 3) {
+        fprintf(stderr, "%s: método inválido\n", prog);
+        return false;
     }
 
-    v = (double *) malloc(n * sizeof(double));
-
-    for (i = 0; i < n; i++) {
-        int rv = fscanf(arq, "%lf", &v[i]);
+    size_t k = 0;
+    if (argc == 4) {
+        int rv = sscanf(argv[3], "%zu", &k);
         if (rv < 0) {
             perror(prog);
-            return EXIT_FAILURE;
+            return false;
         } else if (rv < 1) {
-            fprintf(stderr, "%s: entrada inválida\n", prog);
-            return EXIT_FAILURE;
+            fprintf(stderr, "%s: valor de k inválido\n", prog);
+            return false;
         }
     }
 
-    fclose(arq);
+    array_t *vetor = read_array(argv[1]);
+    if (vetor == NULL) {
+        imprime_erro(prog);
+        return false;
+    };
 
-    free(v);
+    args->prog = prog;
+    args->metodo = metodo;
+    args->vetor = vetor;
+    args->k = k;
+    return true;
+}
 
-    /* Descomente para imprimir o tempo de execucao */
-    /* printf("%.6f\n", t); */
+int main(int argc, const char *argv[]){
+    args_t args;
+    if (!parse_opt(argc, argv, &args)) {
+        return EXIT_FAILURE;
+    }
 
-    return 0;
+    double start_time = get_time();
+    if (isnan(start_time)) {
+        perror(args.prog);
+        free(args.vetor);
+        return EXIT_FAILURE;
+    }
+    switch (args.metodo) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            break;
+    }
+    double end_time = get_time();
+    free(args.vetor);
+
+    if (isnan(start_time)) {
+        perror(args.prog);
+        return EXIT_FAILURE;
+    }
+    printf("%.6f\n", end_time - start_time);
+
+    return EXIT_SUCCESS;
 }
