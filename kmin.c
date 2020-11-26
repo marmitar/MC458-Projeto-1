@@ -147,10 +147,6 @@ array_t *read_array(const char arquivo[]) {
     return arr;
 }
 
-// static attribute(nonull)
-// array_t *metodo_1(array_t *vetor, size_t k) {
-//     return vetor;
-// }
 
 static attribute(nonnull)
 /**
@@ -227,7 +223,10 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     if (vetor == NULL) {
         imprime_erro(prog);
         return false;
-    };
+    } else if (vetor->tam < k) {
+        k = vetor->tam;
+        fprintf(stderr, "%s: k maior que vetor, assumindo k = %zu\n", prog, k);
+    }
 
     args->prog = prog;
     args->metodo = metodo;
