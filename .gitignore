@@ -1,4 +1,5 @@
 kmin
+kmin.o
 .vscode
 valgrind.txt
 main.aux

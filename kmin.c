@@ -52,29 +52,44 @@ int main(int argc, const char *argv[]){
     if (argc != 4) {
         if (argc == 3 && argv[2][0] != '0') {
             fprintf(stderr, "Uso Método 0: ./kmin <arq> 0\n");
-            return 1;
+            return EXIT_FAILURE;
         } else if(argc != 3) {
             fprintf(stderr, "Uso geral: ./kmin <arq> <metodo> <k>\n");
-            return 1;
+            return EXIT_FAILURE;
         }
     }
-
-    char *nomearq = argv[1];
-    char metodo = argv[2][0];
-    int k;
-    if (argc == 4) {
-        k = atoi(argv[3]);
-    }
+    const char *prog = argv[0];
+    const char *nomearq = argv[1];
+    // char metodo = argv[2][0];
+    // int k;
+    // if (argc == 4) {
+    //     k = atoi(argv[3]);
+    // }
 
     FILE *arq = fopen(nomearq, "r");
     int n, i;
     double *v;
 
-    fscanf(arq, "%d", &n);
+    int rv = fscanf(arq, "%d", &n);
+    if (rv < 0) {
+        perror(prog);
+        return EXIT_FAILURE;
+    } else if (rv < 1) {
+        fprintf(stderr, "%s: entrada inválida\n", prog);
+        return EXIT_FAILURE;
+    }
+
     v = (double *) malloc(n * sizeof(double));
 
     for (i = 0; i < n; i++) {
-        fscanf(arq, "%lf", &v[i]);
+        int rv = fscanf(arq, "%lf", &v[i]);
+        if (rv < 0) {
+            perror(prog);
+            return EXIT_FAILURE;
+        } else if (rv < 1) {
+            fprintf(stderr, "%s: entrada inválida\n", prog);
+            return EXIT_FAILURE;
+        }
     }
 
     fclose(arq);
