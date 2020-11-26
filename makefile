@@ -13,8 +13,7 @@ WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
 CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL)
 
 # SOURCE
-SRC := kmin.c
-OBJ := $(SRC:.c=.o) rotinas_$(LANG).o
+SRC := kmin.$(LANG) rotinas_$(LANG).o
 # ARTIFACT
 PROG := kmin
 
@@ -35,8 +34,5 @@ clean:
 	rm -rf $(PROG) $(PROG).o
 
 # BUILDING
-$(PROG): $(OBJ)
+$(PROG): $(SRC)
 	$(CC) $(CFLAGS) $^ -o $@
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
