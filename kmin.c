@@ -267,7 +267,7 @@ resultado_t metodo_0(const array_t *vetor) {
     return resultado_vazio();
 }
 
-static attribute(nonnull)
+static inline attribute(nonnull)
 /**
  * Apresenta o erro marcado em `errno` na saída de erro.
  */
@@ -296,7 +296,7 @@ typedef struct args {
     size_t k;
 } args_t;
 
-static attribute(nonnull)
+static inline attribute(nonnull)
 bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     if (argc != 4) {
         if (argc == 3 && argv[2][0] != '0') {
@@ -343,7 +343,7 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     return true;
 }
 
-static attribute(nonnull)
+static inline attribute(nonnull)
 bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double tempo) {
     printf("%.6f\n", tempo);
 
@@ -355,7 +355,7 @@ bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double 
     return rv == 1;
 }
 
-static
+static inline
 bool imprime_klimite(resultado_t res) {
     if (res.metodo[0] == '0') {
         return false;
