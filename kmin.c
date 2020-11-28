@@ -248,6 +248,25 @@ array_t *metodo_3(array_t *vetor, size_t k) {
     return min;
 }
 
+typedef struct resultado {
+    char metodo[3];
+    size_t k1, k2;
+} resultado_t;
+
+static attribute(const)
+resultado_t resultado_vazio(void) {
+    return (resultado_t) {
+        .metodo = {'0', '0', '0'},
+        .k1 = 0, .k2 = 0
+    };
+}
+
+static attribute(nonnull)
+resultado_t metodo_0(const array_t *vetor) {
+    (void) vetor;
+    return resultado_vazio();
+}
+
 static attribute(nonnull)
 /**
  * Apresenta o erro marcado em `errno` na saída de erro.
@@ -260,18 +279,6 @@ void imprime_erro(const char prog[]) {
 	} else {
 		perror(prog);
 	}
-}
-
-static
-double get_time(void) {
-    struct timespec tp;
-    if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
-        return nan("");
-    }
-
-    double sec = (double) tp.tv_sec;
-    double nsec = (double) tp.tv_nsec;
-    return sec + (nsec / 1E9L);
 }
 
 
@@ -342,27 +349,45 @@ int main(int argc, const char *argv[]){
         return EXIT_FAILURE;
     }
 
-    double start_time = get_time();
-    if (isnan(start_time)) {
-        perror(args.prog);
-        free(args.vetor);
-        return EXIT_FAILURE;
-    }
+    array_t *resultado = NULL;
+    resultado_t limites = resultado_vazio();
+    double tempo_total = nan("");
     switch (args.metodo) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
+        case LIMITES:
+            limites = metodo_0(args.vetor);
+            break;
+        case BUSCA:
+            tempo();
+            resultado = metodo_1(args.vetor, args.k);
+            tempo_total = tempo();
+            break;
+        case QUICKSORT:
+            tempo();
+            resultado = metodo_2(args.vetor, args.k);
+            tempo_total = tempo();
+            break;
+        case HEAP:
+            tempo();
+            resultado = metodo_3(args.vetor, args.k);
+            tempo_total = tempo();
             break;
     }
-    double end_time = get_time();
     free(args.vetor);
 
-    if (isnan(start_time)) {
-        perror(args.prog);
-        return EXIT_FAILURE;
+    if (!isnan(tempo_total)) {
+        if (resultado == NULL) {
+            imprime_erro(args.prog);
+            return EXIT_FAILURE;
+        }
+
+        printf("%.6f\n", tempo_total);
+        free(resultado);
+    } else {
+        printf("%c <(%zu)< %c <(%zu)< %c\n",
+            limites.metodo[0], limites.k1,
+            limites.metodo[1], limites.k2,
+            limites.metodo[2]);
     }
-    printf("%.6f\n", end_time - start_time);
 
     return EXIT_SUCCESS;
 }
