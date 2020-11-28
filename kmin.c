@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
@@ -109,6 +110,7 @@ typedef struct array {
     double dado[];
 } array_t;
 
+static inline
 array_t *alloc_array(size_t tam) {
     size_t fixo = offsetof(array_t, dado);
     size_t dados = tam * sizeof(double);
@@ -120,6 +122,7 @@ array_t *alloc_array(size_t tam) {
     return arr;
 }
 
+static attribute(nonull)
 array_t *read_array(const char arquivo[]) {
     FILE *arq = fopen(arquivo, "r");
     if (arq == NULL) return NULL;
@@ -148,6 +151,49 @@ array_t *read_array(const char arquivo[]) {
 }
 
 
+static inline attribute(nonull)
+array_t *copy_array(const array_t *array, size_t max) {
+    size_t tam = (array->tam < max)? array->tam : max;
+
+    array_t *copia = alloc_array(tam);
+    if (copia == NULL) return NULL;
+
+    memcpy(copia->dado, array->dado, tam);
+    return copia;
+}
+
+static attribute(nonull)
+array_t *metodo_1(array_t *vetor, size_t k) {
+    for (size_t i = 0; i < k; i++) {
+        size_t min_idx = k;
+        double min_val = vetor->dado[k];
+
+        for (size_t j = k+1; j < vetor->tam; j++) {
+            double val = vetor->dado[j];
+
+            if (val < min_val) {
+                min_idx = j;
+                min_val = val;
+            }
+        }
+        vetor->dado[min_idx] = vetor->dado[k];
+        vetor->dado[k] = min_val;
+    }
+
+    return copy_array(vetor, k);
+}
+
+static attribute(nonull)
+array_t *metodo_2(array_t *vetor, size_t k) {
+    quick_sort(vetor->dado, (int) k);
+    return copy_array(vetor, k);
+}
+
+static attribute(nonull)
+array_t *metodo_3(array_t *vetor, size_t k) {
+    return NULL;
+}
+
 static attribute(nonnull)
 /**
  * Apresenta o erro marcado em `errno` na saída de erro.
@@ -162,7 +208,7 @@ void imprime_erro(const char prog[]) {
 	}
 }
 
-
+static
 double get_time(void) {
     struct timespec tp;
     if (clock_gettime(CLOCK_REALTIME, &tp) == 0) {
@@ -189,6 +235,7 @@ typedef struct args {
     size_t k;
 } args_t;
 
+static attribute(nonull)
 bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     if (argc != 4) {
         if (argc == 3 && argv[2][0] != '0') {
