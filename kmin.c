@@ -343,6 +343,7 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     return true;
 }
 
+static attribute(nonull)
 bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double tempo) {
     printf("%.6f\n", tempo);
 
@@ -352,6 +353,19 @@ bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double 
     free(resultado);
 
     return rv == 1;
+}
+
+static attribute(nonull)
+bool imprime_klimite(resultado_t res) {
+    if (res.metodo[0] == '0') {
+        return false;
+    }
+
+    printf("%c <(%zu)< %c <(%zu)< %c\n",
+        res.metodo[0], res.k1,
+        res.metodo[1], res.k2,
+        res.metodo[2]);
+    return true;
 }
 
 int main(int argc, const char *argv[]){
@@ -395,16 +409,9 @@ int main(int argc, const char *argv[]){
             fprintf("RESULTADO ERRADO: %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3]);
             return EXIT_FAILURE;
         }
-    } else {
-        if (limites.metodo[0] == '0') {
-            imprime_erro(args.prog);
-            return EXIT_FAILURE;
-        }
-
-        printf("%c <(%zu)< %c <(%zu)< %c\n",
-            limites.metodo[0], limites.k1,
-            limites.metodo[1], limites.k2,
-            limites.metodo[2]);
+    } else if (!imprime_klimite(limites)) {
+        imprime_erro(args.prog);
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
