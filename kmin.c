@@ -122,7 +122,7 @@ array_t *alloc_array(size_t tam) {
     return arr;
 }
 
-static attribute(nonull)
+static attribute(nonnull)
 array_t *read_array(const char arquivo[]) {
     FILE *arq = fopen(arquivo, "r");
     if (arq == NULL) return NULL;
@@ -151,7 +151,7 @@ array_t *read_array(const char arquivo[]) {
 }
 
 
-static inline attribute(nonull)
+static inline attribute(nonnull)
 array_t *copy_array(const array_t *array, size_t max) {
     size_t tam = (array->tam < max)? array->tam : max;
 
@@ -162,7 +162,7 @@ array_t *copy_array(const array_t *array, size_t max) {
     return copia;
 }
 
-static attribute(nonull)
+static attribute(nonnull)
 array_t *metodo_1(array_t *vetor, size_t k) {
     for (size_t i = 0; i < k; i++) {
         size_t min_idx = k;
@@ -183,7 +183,7 @@ array_t *metodo_1(array_t *vetor, size_t k) {
     return copy_array(vetor, k);
 }
 
-static attribute(nonull)
+static attribute(nonnull)
 array_t *metodo_2(array_t *vetor, size_t k) {
     quick_sort(vetor->dado, (int) k);
     return copy_array(vetor, k);
@@ -234,7 +234,7 @@ double extract_min(array_t *array) {
     return min;
 }
 
-static attribute(nonull)
+static attribute(nonnull)
 array_t *metodo_3(array_t *vetor, size_t k) {
     array_t *min = alloc_array(k);
     if (min == NULL) return NULL;
@@ -296,7 +296,7 @@ typedef struct args {
     size_t k;
 } args_t;
 
-static attribute(nonull)
+static attribute(nonnull)
 bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     if (argc != 4) {
         if (argc == 3 && argv[2][0] != '0') {
@@ -343,7 +343,7 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
     return true;
 }
 
-static attribute(nonull)
+static attribute(nonnull)
 bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double tempo) {
     printf("%.6f\n", tempo);
 
@@ -355,7 +355,7 @@ bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double 
     return rv == 1;
 }
 
-static attribute(nonull)
+static
 bool imprime_klimite(resultado_t res) {
     if (res.metodo[0] == '0') {
         return false;
@@ -406,7 +406,7 @@ int main(int argc, const char *argv[]){
         }
 
         if (!imprime_tempo(args.vetor, resultado, tempo_total)) {
-            fprintf("RESULTADO ERRADO: %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3]);
+            fprintf(stderr, "RESULTADO ERRADO: %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3]);
             return EXIT_FAILURE;
         }
     } else if (!imprime_klimite(limites)) {
