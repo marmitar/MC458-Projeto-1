@@ -189,9 +189,63 @@ array_t *metodo_2(array_t *vetor, size_t k) {
     return copy_array(vetor, k);
 }
 
+static inline attribute(nonnull)
+void min_heapify(double *vetor, size_t tam, size_t no) {
+    size_t esq = 2 * no + 1;
+    size_t dir = 2 * no + 2;
+
+    do {
+        size_t menor = no;
+        if (esq < tam && vetor[esq] < vetor[no]) {
+            menor = esq;
+        }
+        if (dir < tam && vetor[dir] < vetor[no]) {
+            menor = dir;
+        }
+
+        if (menor != no) {
+            double tmp = vetor[menor];
+            vetor[menor] = vetor[no];
+            vetor[no] = tmp;
+
+            no = menor;
+        } else {
+            no = tam;
+        }
+    } while (no < tam);
+}
+
+static attribute(nonnull)
+void build_min_heap(array_t *array) {
+    size_t n = array->tam;
+    for (size_t i = (n+1)/2; i > 0; i--) {
+        min_heapify(array->dado, n, i);
+    }
+}
+
+static attribute(nonnull)
+double extract_min(array_t *array) {
+    double min = array->dado[0];
+
+    size_t ultimo = array->tam--;
+    array->dado[0] = array->dado[ultimo];
+    min_heapify(array->dado, ultimo, 0);
+
+    return min;
+}
+
 static attribute(nonull)
 array_t *metodo_3(array_t *vetor, size_t k) {
-    return NULL;
+    array_t *min = alloc_array(k);
+    if (min == NULL) return NULL;
+
+    build_min_heap(vetor);
+    for (size_t i = 0; i < k; i++) {
+        min->dado[k] = extract_min(vetor);
+        vetor->dado[vetor->tam] = min->dado[k];
+    }
+    vetor->tam += k;
+    return min;
 }
 
 static attribute(nonnull)
