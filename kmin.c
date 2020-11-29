@@ -251,16 +251,16 @@ resultado_t resultado_vazio(void) {
 typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
 static inline attribute(pure, nonnull)
-double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_t metodo) {
+double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
 	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
 
 	double *copia = malloc(n * sizeof(double));
 	if (copia == NULL) return NAN;
 	memcpy(copia, vetor, n * sizeof(double));
 
-	double ini = tempo();
+	tempo();
 	double *resultado = fn[metodo](copia, n, k);
-	double total = tempo() - ini;
+	double total = tempo();
 	free(copia);
 
 	if (resultado == NULL) {
@@ -287,7 +287,7 @@ size_t proximo_falsa_pos(size_t a, double ya, size_t b, double yb) {
 
 
 static inline attribute(pure)
-ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metodo_t m2) {
+ssize_t falsa_posicao(const double *vetor, size_t n, metodo_t m1, metodo_t m2) {
 	size_t ka = 1, kb = n - 1;
 	double fa = exec_metodo(vetor, n, ka, m1) - exec_metodo(vetor, n, ka, m2);
 	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
@@ -412,7 +412,7 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
 		}
 	}
 
-	size_t tam;
+	size_t tam = 0;
 	double *vetor = read_array(argv[1], &tam);
 	if (vetor == NULL) {
 		imprime_erro(prog);
