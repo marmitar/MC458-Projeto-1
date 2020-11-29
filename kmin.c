@@ -256,7 +256,7 @@ static inline attribute(pure, nonnull)
 double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
 	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
 
-	if (k >= n) {
+	if (k > n) {
 		fprintf(stderr, "ERR: k >= n,  k = %zu, n = %zu\n", k, n);
 	}
 
@@ -297,18 +297,18 @@ size_t proximo_falsa_pos(size_t a, double ya, size_t b, double yb) {
 
 static inline attribute(pure)
 ssize_t falsa_posicao(const double *vetor, size_t n, metodo_t m1, metodo_t m2) {
-	size_t ka = 1, kb = n - 1;
+	size_t ka = 1, kb = n;
 	double fa = exec_metodo(vetor, n, ka, m1) - exec_metodo(vetor, n, ka, m2);
 	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
 	if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
+	ssize_t maior1 = (fb > 0.0)? -1 : 1;
+
 	if (fa * fb >= 0) {
 		fprintf(stderr, "PROBLEMA NOS MÉTODOS %d, %d: ", m1, m2);
 		fprintf(stderr, "impossível achar limites, ");
 		fprintf(stderr, "ka = %zu, fa = %lf, kb = %zu, fb = %lf\n", ka, fa, kb, fb);
-		return 0;
+		return maior1;
 	}
-
-	ssize_t maior1 = (fb > 0.0)? -1 : 1;
 	while (true) {
 		size_t kp = proximo_falsa_pos(ka, fa, kb, fb);
 		if (kp == ka || kp == kb) {
@@ -336,8 +336,14 @@ metodo_t prox_metodo(metodo_t m) {
 
 static attribute(const, nonnull)
 resultado_t metodo_0(const double *vetor, size_t n) {
-	ssize_t k[4][4];
+	if (n == 0) {
+		return (resultado_t) {
+			.metodo = {BUSCA, QUICKSORT, HEAP},
+			.k1 = 0, .k2 = 0
+		};
+	}
 
+	ssize_t k[4][4];
 	for (metodo_t m1 = BUSCA; m1 <= HEAP; m1++) {
 		k[m1][m1] = 0;
 		for (metodo_t m2 = m1+1; m2 <= HEAP; m2++) {
@@ -457,7 +463,7 @@ bool imprime_tempo(const double *restrict vetor, double *restrict resultado, siz
 
 static inline
 bool imprime_klimite(resultado_t res) {
-	if (res.k1 == SIZE_MAX || res.k2 == SIZE_MAX) {
+	if (res.k1 == SIZE_MAX && res.k2 == SIZE_MAX && res.metodo[2] == 0) {
 		return false;
 	}
 

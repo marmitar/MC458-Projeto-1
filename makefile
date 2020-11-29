@@ -9,7 +9,7 @@ endif
 # OPTIONS
 LEVEL ?= 3
 DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=0
-OPTFL ?= -ffast-math -march=native -mtune=native -pipe -fno-plt
+OPTFL ?= -march=native -mtune=native -pipe -fno-plt
 WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
 CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL) $(OPTFL)
 
@@ -28,6 +28,7 @@ run: $(PROG)
 
 debug: LEVEL = g
 debug: DEBUG = -DDEBUG -D_FORTIFY_SOURCE=2 -ggdb3
+debug: OPTFL = -march=native
 debug: clean all
 
 clean:
