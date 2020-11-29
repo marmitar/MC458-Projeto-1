@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
@@ -74,6 +75,7 @@ void kmin_to_file(double *r, int k);
 #define ERR -1
 /* Erro especial para entradas inválidas. */
 #define ENTINV 0x1234
+#define RESERR 0x1235
 
 static attribute(format(scanf, 3, 4), nonnull)
 /**
@@ -105,7 +107,7 @@ bool cfscanf(unsigned expect, FILE *restrict arquivo, const char *restrict fmt, 
 	return true;
 }
 
-static attribute(nonnull)
+static attribute(nonnull, malloc, warn_unused_result)
 double *read_array(const char arquivo[], size_t *n) {
     FILE *arq = fopen(arquivo, "r");
     if (arq == NULL) return NULL;
@@ -136,7 +138,7 @@ double *read_array(const char arquivo[], size_t *n) {
 }
 
 
-static attribute(nonnull)
+static attribute(nonnull, returns_nonnull)
 double *metodo_1(double *vetor, size_t n, size_t k) {
     for (size_t i = 0; i < k; i++) {
         size_t min_idx = i;
@@ -157,7 +159,7 @@ double *metodo_1(double *vetor, size_t n, size_t k) {
     return vetor;
 }
 
-static attribute(nonnull)
+static attribute(nonnull, returns_nonnull)
 double *metodo_2(double *vetor, size_t n, attribute(unused) size_t _k) {
     quick_sort(vetor, (int) n);
     return vetor;
@@ -222,6 +224,14 @@ double *metodo_3(double *vetor, size_t n, size_t k) {
     return fim;
 }
 
+
+typedef enum metodo {
+    LIMITES = 0,
+    BUSCA = 1,
+    QUICKSORT = 2,
+    HEAP = 3
+} metodo_t;
+
 typedef struct resultado {
     char metodo[3];
     size_t k1, k2;
@@ -235,18 +245,10 @@ resultado_t resultado_vazio(void) {
     };
 }
 
-
-typedef enum metodo {
-    LIMITES = 0,
-    BUSCA = 1,
-    QUICKSORT = 2,
-    HEAP = 3
-} metodo_t;
-
 #undef NAN
 #define NAN nan("")
 
-typedef double *(*metodo_fn)(double *, size_t, size_t);
+typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
 static inline attribute(pure, nonnull)
 double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_fn metodo, metodo_t check) {
@@ -256,11 +258,6 @@ double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_fn m
     double ini = tempo();
     double *resultado = metodo(copia, n, k);
     double total = tempo() - ini;
-
-    if (resultado == NULL) {
-        free(copia);
-        return NAN;
-    }
 
     bool ok;
     switch (check) {
@@ -275,6 +272,7 @@ double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_fn m
 
     if (!ok) {
         fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", check, n, k);
+        errno = RESERR;
         return NAN;
     }
     return total;
@@ -300,15 +298,18 @@ ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metod
     size_t ka = 1, kb = n - 1;
     double fa = exec_metodo(vetor, n, ka, f1, m1) - exec_metodo(vetor, n, ka, f2, m2);
     double fb = exec_metodo(vetor, n, kb, f1, m1) - exec_metodo(vetor, n, kb, f2, m2);
-    ssize_t maior1 = (fb > 0.0)? 1 : -1;
+    if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
 
+    ssize_t maior1 = (fb > 0.0)? 1 : -1;
     while (true) {
         size_t kp = proximo_falsa_pos(ka, fa, kb, fb);
         if (kp == ka || kp == kb) {
             return maior1 * (ssize_t) kp;
         }
-        double fp =  exec_metodo(vetor, n, kp, f1, m1) - exec_metodo(vetor, n, kp, f2, m2);
-        if (fp == 0.0) {
+        double fp = exec_metodo(vetor, n, kp, f1, m1) - exec_metodo(vetor, n, kp, f2, m2);
+        if (isnan(fp)) {
+            return SSIZE_MAX;
+        } else if (fp == 0.0) {
             return maior1 * (ssize_t) kp;
         } else if (fp * fa > 0.0) {
             ka = kp;
@@ -329,12 +330,17 @@ size_t abs(ssize_t num) {
     }
 }
 
+#define CHECK_METODOS true
+
 static attribute(const, nonnull)
 resultado_t metodo_0(const double *vetor, size_t n) {
-    const bool check = true;
-    ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT, check);
-    ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP, check);
-    ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP, check);
+    ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT, CHECK_METODOS);
+    if (k12 == SSIZE_MAX) return resultado_vazio();
+    ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP, CHECK_METODOS);
+    if (k13 == SSIZE_MAX) return resultado_vazio();
+    ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP, CHECK_METODOS);
+    if (k23 == SSIZE_MAX) return resultado_vazio();
+
     size_t a12 = abs(k12), a13 = abs(k13), a23 = abs(k23);
 
     resultado_t res; // TODO
@@ -346,13 +352,15 @@ static inline attribute(nonnull)
  * Apresenta o erro marcado em `errno` na saída de erro.
  */
 void imprime_erro(const char prog[]) {
-	/* erro especial nesse programa */
-	if (errno == ENTINV) {
-		fprintf(stderr, "%s: entrada inválida\n", prog);
-	/* erros gerais da libc */
-	} else {
-		perror(prog);
-	}
+    switch (errno) {
+        case ENTINV:
+            fprintf(stderr, "%s: entrada inválida\n", prog);
+			break;
+		case RESERR:
+			break;
+		default:
+			perror(prog);
+    }
 }
 
 typedef struct args {
