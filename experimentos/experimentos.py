@@ -78,20 +78,25 @@ def print_row(k, t1, t2, t3):
 
 # Escrita de uma linha no arquivo de resultados
 def write_row(f, k, t1, t2, t3):
-    if t1 < tmax:
-        st1 = f'{t1:.6f}'
-    else:
-        st1 = '--------'
-    st2 = f'{t2:.6f}'
-    st3 = f'{t3:.6f}'
-    if t1 < t2 and t1 < t3:
-        st1 = f'*{st1}*'
-    elif t2 < t1 and t2 < t3:
-        st2 = f'*{st2}*'
-    else:
-        st3 = f'*{st3}*'
+    st = [None, None, None, None]
+    t = [None, t1, t2, t3]
 
-    write_row_fmt(k, st1, st2, st3, f=f)
+    for i in (1, 2, 3):
+        if t[i] < tmax:
+            st[i] = f'{t[i]:.6f}'
+        else:
+            st[i] = '--------'
+
+        j, k = (i % 3) + 1, ((i + 1) % 3) + 1
+
+        if t[i] < t[j] and t[i] < t[k]:
+            m = '*'
+        else:
+            m = ' '
+
+        st[i] = ''.join([m, st[i], m])
+
+    write_row_fmt(k, st[1], st[2], st[3], f=f)
 
 
 def sweep_range(r, run_slowest):
