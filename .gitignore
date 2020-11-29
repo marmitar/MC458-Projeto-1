@@ -3,6 +3,7 @@ kmin.o
 kmin.out
 .vscode
 valgrind.txt
+*.valgrind
 main.aux
 main.fdb_latexmk
 main.fls
