@@ -16,20 +16,21 @@ except IOError:
     sys.exit(1)
 
 # nome do executavel
-try:
-    prog = sys.argv[1]
-except IndexError:
-    prog = './kmin'
-if prog[0:2] != './':
-    prog = f'./{prog}'
+prog = './kmin'
 if os.path.exists(prog) == False:
     print('O arquivo executavel nao foi encontrado')
     sys.exit(1)
 
 # nome do arquivo com a instancia
-inst = 'experimentos/vet-1000000.ins'
-n = 1000000
-if os.path.exists(inst) == False:
+try:
+    inst = sys.argv[1]
+except IndexError:
+    inst = 'experimentos/vet-1000000.ins'
+
+try:
+    with open(inst, 'rt') as finst:
+        n = int(finst.readline().strip())
+except FileNotFoundError:
     print(f'O arquivo \'{inst}\' nao foi encontrado.')
     print(f'Execute este script no mesmo diretorio do arquivo \'{inst}\'')
     sys.exit(1)
@@ -102,6 +103,13 @@ def write_row(f, k, t1, t2, t3):
 def sweep_range(r, run_slowest):
     nrows = 0
     for k in r:
+        if nrows % 20 == 0:
+            print_header()
+
+        if k > n:
+            print_row(k, tmax, tmax, tmax)
+            nrows += 1
+            continue
         times = [0, 0, 0]
         if run_slowest:
             algrange = range(1, 4)
@@ -126,8 +134,6 @@ def sweep_range(r, run_slowest):
                 print('')
                 sys.exit(1)
 
-        if nrows % 20 == 0:
-            print_header()
         print_row(k, times[0], times[1], times[2])
         write_row(f, k, times[0], times[1], times[2])
         nrows = nrows + 1
