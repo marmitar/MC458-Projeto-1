@@ -5,6 +5,7 @@ show
 gen
 resultados.dat
 rotinas
+rotinas.o
 .vscode
 valgrind.txt
 *.valgrind
