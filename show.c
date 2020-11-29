@@ -67,7 +67,7 @@ int main(int argc, char *const *argv) {
 	const char *prog = argv[0];
 	const char *out = NULL;
 	char sep = '\n';
-	int precision = 6;
+	int precision = 2;
 
 	for (int c; (c = getopt(argc, argv, "so:p:")) != -1;) {
 		switch (c) {
