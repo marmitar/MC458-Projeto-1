@@ -8,7 +8,7 @@ else
 endif
 # OPTIONS
 LEVEL ?= 3
-DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=2
+DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=1 -ffast-math -march=native -mtune=native -pipe -fno-plt
 WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
 CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL)
 
@@ -25,9 +25,8 @@ all: $(PROG)
 run: $(PROG)
 	./$(PROG)
 
-debug: LEVEL = 0
-debug: DEBUG = -DDEBUG
-debug: CFLAGS += -ggdb3
+debug: LEVEL = g
+debug: DEBUG = -DDEBUG -D_FORTIFY_SOURCE=2 -ggdb3
 debug: clean all
 
 clean:
