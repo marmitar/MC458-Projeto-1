@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
@@ -76,6 +77,7 @@ void kmin_to_file(double *r, int k);
 /* Erro especial para entradas inválidas. */
 #define ENTINV 0x1234
 #define RESERR 0x1235
+#define SOLUNF 0x1236
 
 static attribute(format(scanf, 3, 4), nonnull)
 /**
@@ -238,10 +240,10 @@ typedef struct resultado {
 } resultado_t;
 
 static attribute(const)
-resultado_t resultado_vazio(void) {
+resultado_t resultado_erro(void) {
 	return (resultado_t) {
-		.metodo = {'0', '0', '0'},
-		.k1 = 0, .k2 = 0
+		.metodo = {0, 0, 0},
+		.k1 = SIZE_MAX, .k2 = SIZE_MAX
 	};
 }
 
@@ -342,7 +344,7 @@ resultado_t metodo_0(const double *vetor, size_t n) {
 			ssize_t ans = k[m1][m2] = falsa_posicao(vetor, n, m1, m2);
 			k[m2][m1] = -ans;
 
-			if (ans == SSIZE_MAX) return resultado_vazio();
+			if (ans == SSIZE_MAX) return resultado_erro();
 		}
 	}
 
@@ -368,7 +370,8 @@ resultado_t metodo_0(const double *vetor, size_t n) {
 			return res;
 		}
 	}
-	return resultado_vazio();
+	errno = SOLUNF;
+	return resultado_erro();
 }
 
 static inline attribute(nonnull)
@@ -380,6 +383,8 @@ void imprime_erro(const char prog[]) {
 		case ENTINV:
 			fprintf(stderr, "%s: entrada inválida\n", prog);
 			break;
+		case SOLUNF:
+			fprintf(stderr, "%s: não foi possível encontrar solução\n", prog);
 		case RESERR:
 			break;
 		default:
@@ -452,7 +457,7 @@ bool imprime_tempo(const double *restrict vetor, double *restrict resultado, siz
 
 static inline
 bool imprime_klimite(resultado_t res) {
-	if (res.metodo[0] == '0') {
+	if (res.k1 == SIZE_MAX || res.k2 == SIZE_MAX) {
 		return false;
 	}
 
@@ -470,7 +475,7 @@ int main(int argc, const char *argv[]){
 	}
 
 	double *resultado = NULL;
-	resultado_t limites = resultado_vazio();
+	resultado_t limites = resultado_erro();
 	double tempo_total = NAN;
 	switch (args.metodo) {
 		case LIMITES:
@@ -493,20 +498,26 @@ int main(int argc, const char *argv[]){
 			break;
 	}
 
+	int ret = EXIT_SUCCESS;
 	if (!isnan(tempo_total)) {
 		if (resultado == NULL) {
 			imprime_erro(args.prog);
+			free(args.vetor);
 			return EXIT_FAILURE;
 		}
 
 		if (!imprime_tempo(args.vetor, resultado, args.n, args.k, tempo_total)) {
+			free(args.vetor);
 			return EXIT_FAILURE;
 		}
-	} else if (!imprime_klimite(limites)) {
-		imprime_erro(args.prog);
-		return EXIT_FAILURE;
+		free(args.vetor);
+	} else {
+		free(args.vetor);
+		if (!imprime_klimite(limites)) {
+			imprime_erro(args.prog);
+			return EXIT_FAILURE;
+		}
 	}
-	free(args.vetor);
 
 	return EXIT_SUCCESS;
 }
