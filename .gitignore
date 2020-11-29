@@ -1,6 +1,7 @@
 kmin
 kmin.o
 kmin.out
+show
 .vscode
 valgrind.txt
 *.valgrind
