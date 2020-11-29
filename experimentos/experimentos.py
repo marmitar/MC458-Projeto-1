@@ -8,11 +8,6 @@ import signal
 import os
 import threading
 
-# argumentos
-if len(sys.argv) != 2:
-    print(f'Uso: python {sys.argv[0]} <executavel>')
-    sys.exit(1)
-
 # abre arquivo de resultados
 try:
     f = open('resultados.dat', 'w')
@@ -21,7 +16,10 @@ except IOError:
     sys.exit(1)
 
 # nome do executavel
-prog = sys.argv[1]
+try:
+    prog = sys.argv[1]
+except IndexError:
+    prog = './kmin'
 if prog[0:2] != './':
     prog = f'./{prog}'
 if os.path.exists(prog) == False:
