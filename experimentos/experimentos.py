@@ -27,7 +27,7 @@ if os.path.exists(prog) == False:
     sys.exit(1)
 
 # nome do arquivo com a instancia
-inst = 'vet-1000000.ins'
+inst = 'experimentos/vet-1000000.ins'
 n = 1000000
 if os.path.exists(inst) == False:
     print(f'O arquivo \'{inst}\' nao foi encontrado.')
@@ -47,13 +47,13 @@ class ProgramRunner(threading.Thread):
         self.finished = True
 
     def run(self):
-        self.p = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
+        self.p = subprocess.Popen(self.cmd, stdout = subprocess.PIPE, text = True)
         self.output = self.p.communicate()[0].strip().split(' ')
 
     def run_program(self):
         self.start()
         self.join(self.timeout)
-        if self.isAlive():
+        if self.is_alive():
             os.kill(self.p.pid, signal.SIGTERM)
             self.finished = False
             self.join()
@@ -65,7 +65,7 @@ class ProgramRunner(threading.Thread):
             return [str(self.timeout)]
 
 def write_row_fmt(k, t1, t2, t3, f=sys.stdout):
-    print(f'{k:>8s}{t1:>14s}{t2:>14s}{t3:>14s}', file=f)
+    print(f'{str(k):>8s}{t1:>14s}{t2:>14s}{t3:>14s}', file=f)
 
 # Cabecalho da saida no terminal
 def print_header():
