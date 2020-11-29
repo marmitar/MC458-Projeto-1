@@ -64,7 +64,10 @@ int parse_prec(const char *restrict text, const char *restrict prog) {
 
 static __attribute__((nonnull))
 void usage(const char prog[]) {
+	printf("Leitura do vetor de saída, normalmente 'kmin.out'\n");
+	printf("\n");
 	printf("Uso: %s [-p PREC] [-s [SEP]] [entrada ...]\n", prog);
+	printf("\n");
 	printf("Opções:\n");
 	printf("  -h          Mensagem de ajuda.\n");
 	printf("  -p PREC     Precisão dos valores. (PADRÃO: 2)\n");
