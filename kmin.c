@@ -262,6 +262,10 @@ double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_t me
 	double total = tempo() - ini;
 	free(copia);
 
+	if (resultado == NULL) {
+		return NAN;
+	}
+
 #ifdef CHECA_METODO_ZERO
 	if (!resposta_correta(vetor, n, k, resultado)) {
 		fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", metodo, n, k);
@@ -288,7 +292,7 @@ ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metod
 	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
 	if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
 
-	ssize_t maior1 = (fb > 0.0)? 1 : -1;
+	ssize_t maior1 = (fb > 0.0)? -1 : 1;
 	while (true) {
 		size_t kp = proximo_falsa_pos(ka, fa, kb, fb);
 		if (kp == ka || kp == kb) {
@@ -310,26 +314,46 @@ ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metod
 }
 
 static inline attribute(const)
-size_t abs(ssize_t num) {
-	if (num < 0) {
-		return (size_t) (-num);
-	} else {
-		return (size_t) num;
-	}
+metodo_t prox_metodo(metodo_t m) {
+	return (m % 3) + 1;
 }
 
 static attribute(const, nonnull)
 resultado_t metodo_0(const double *vetor, size_t n) {
-	ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT);
-	if (k12 == SSIZE_MAX) return resultado_vazio();
-	ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP);
-	if (k13 == SSIZE_MAX) return resultado_vazio();
-	ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP);
-	if (k23 == SSIZE_MAX) return resultado_vazio();
+	ssize_t k[4][4];
 
-	size_t a12 = abs(k12), a13 = abs(k13), a23 = abs(k23);
+	for (metodo_t m1 = BUSCA; m1 <= HEAP; m1++) {
+		k[m1][m1] = 0;
+		for (metodo_t m2 = m1+1; m2 <= HEAP; m2++) {
+			ssize_t ans = k[m1][m2] = falsa_posicao(vetor, n, m1, m2);
+			k[m2][m1] = -ans;
 
-	resultado_t res; // TODO
+			if (ans == SSIZE_MAX) return resultado_vazio();
+		}
+	}
+
+	for (metodo_t m1 = BUSCA; m1 <= HEAP; m1++) {
+		metodo_t m2 = prox_metodo(m1);
+		metodo_t m3 = prox_metodo(m2);
+
+		if (k[m1][m2] <= 0 && k[m1][m3] <= 0) {
+			resultado_t res;
+			res.metodo[0] = m1;
+
+			if (k[m2][m3] <= 0) {
+				res.metodo[1] = m2;
+				res.metodo[2] = m3;
+				res.k1 = (size_t) k[m2][m1];
+				res.k2 = (size_t) k[m3][m2];
+			} else {
+				res.metodo[1] = m3;
+				res.metodo[2] = m2;
+				res.k1 = (size_t) k[m2][m1];
+				res.k2 = (size_t) k[m2][m3];
+			}
+			return res;
+		}
+	}
 	return resultado_vazio();
 }
 
