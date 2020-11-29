@@ -34,9 +34,9 @@ debug: clean all
 clean:
 	rm -rf $(PROG) $(PROG).o
 
-show: show.c
-	$(CC) $(CFLAGS) $^ -o $@
-
 # BUILDING
 $(PROG): $(SRC)
+	$(CC) $(CFLAGS) $^ -o $@
+
+%: %.c
 	$(CC) $(CFLAGS) $^ -o $@
