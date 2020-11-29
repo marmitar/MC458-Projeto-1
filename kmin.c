@@ -301,14 +301,12 @@ ssize_t falsa_posicao(const double *vetor, size_t n, metodo_t m1, metodo_t m2) {
 	double fa = exec_metodo(vetor, n, ka, m1) - exec_metodo(vetor, n, ka, m2);
 	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
 	if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
-	ssize_t maior1 = (fb > 0.0)? -1 : 1;
 
+	ssize_t maior1 = (fb > 0.0)? -1 : 1;
 	if (fa * fb >= 0) {
-		fprintf(stderr, "PROBLEMA NOS MÉTODOS %d, %d: ", m1, m2);
-		fprintf(stderr, "impossível achar limites, ");
-		fprintf(stderr, "ka = %zu, fa = %lf, kb = %zu, fb = %lf\n", ka, fa, kb, fb);
 		return maior1;
 	}
+
 	while (true) {
 		size_t kp = proximo_falsa_pos(ka, fa, kb, fb);
 		if (kp == ka || kp == kb) {
