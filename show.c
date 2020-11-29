@@ -53,10 +53,10 @@ int parse_prec(const char *restrict text, const char *restrict prog) {
 		perror(prog);
 		return -1;
 	} else if (num < 0 || num > INT_MAX) {
-		fprintf(stderr, "%s: Invalid precision range for option -p\n", prog);
+		fprintf(stderr, "%s: invalid precision range for option -p\n", prog);
 		return -1;
 	} else if (end != NULL && *end != '\0') {
-		fprintf(stderr, "%s: Argument '%s' is invalid for option -p\n", prog, text);
+		fprintf(stderr, "%s: argument '%s' is invalid for option -p\n", prog, text);
 		return -1;
 	}
 
@@ -84,13 +84,6 @@ int main(int argc, char *const *argv) {
 				}
 				break;
 			case '?':
-				if (optopt == 'o' || optopt == 'p') {
-					fprintf(stderr, "%s: Option -%c requires an argument\n", prog, optopt);
-				} else if (isprint(optopt)) {
-					fprintf(stderr, "%s: Unknown option '-%c'\n", prog, optopt);
-				} else {
-					fprintf(stderr, "%s: Unknown option character '\\x%x'\n", prog, optopt);
-				}
 				return EXIT_FAILURE;
 			default:
 				abort();
