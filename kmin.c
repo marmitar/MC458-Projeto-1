@@ -105,88 +105,62 @@ bool cfscanf(unsigned expect, FILE *restrict arquivo, const char *restrict fmt, 
 	return true;
 }
 
-typedef struct array {
-    size_t tam;
-    double dado[];
-} array_t;
-
-static inline
-array_t *alloc_array(size_t tam) {
-    size_t fixo = offsetof(array_t, dado);
-    size_t dados = tam * sizeof(double);
-
-    array_t *arr = malloc(fixo + dados);
-    if (arr == NULL) return NULL;
-
-    arr->tam = tam;
-    return arr;
-}
-
 static attribute(nonnull)
-array_t *read_array(const char arquivo[]) {
+double *read_array(const char arquivo[], size_t *n) {
     FILE *arq = fopen(arquivo, "r");
     if (arq == NULL) return NULL;
 
-    size_t tam = 0;
+    size_t tam = *n = 0;
     if (!cfscanf(1, arq, "%zu", &tam)) {
         fclose(arq);
         return NULL;
     }
 
-    array_t *arr = alloc_array(tam);
+    double *arr = malloc(tam * sizeof(double));
     if (arr == NULL) {
         fclose(arq);
         return NULL;
     }
 
     for (size_t i = 0; i < tam; i++) {
-        if (!cfscanf(1, arq, "%lf", &arr->dado[i])) {
+        if (!cfscanf(1, arq, "%lf", arr + i)) {
             fclose(arq);
             free(arr);
             return NULL;
         }
     }
+    *n = tam;
+
     fclose(arq);
     return arr;
 }
 
 
-static inline attribute(nonnull)
-array_t *copy_array(const array_t *array, size_t max) {
-    size_t tam = (array->tam < max)? array->tam : max;
-
-    array_t *copia = alloc_array(tam);
-    if (copia == NULL) return NULL;
-
-    memcpy(copia->dado, array->dado, tam * sizeof(double));
-    return copia;
-}
-
 static attribute(nonnull)
-array_t *metodo_1(array_t *vetor, size_t k) {
+double *metodo_1(double *vetor, size_t n, size_t k) {
     for (size_t i = 0; i < k; i++) {
         size_t min_idx = i;
-        double min_val = vetor->dado[i];
+        double min_val = vetor[i];
 
-        for (size_t j = i+1; j < vetor->tam; j++) {
-            double val = vetor->dado[j];
+        for (size_t j = i+1; j < n; j++) {
+            double val = vetor[j];
 
             if (val < min_val) {
                 min_idx = j;
                 min_val = val;
             }
         }
-        vetor->dado[min_idx] = vetor->dado[i];
-        vetor->dado[i] = min_val;
+        vetor[min_idx] = vetor[i];
+        vetor[i] = min_val;
     }
 
-    return copy_array(vetor, k);
+    return vetor;
 }
 
 static attribute(nonnull)
-array_t *metodo_2(array_t *vetor, size_t k) {
-    quick_sort(vetor->dado, (int) vetor->tam);
-    return copy_array(vetor, k);
+double *metodo_2(double *vetor, size_t n, attribute(unused) size_t _k) {
+    quick_sort(vetor, (int) n);
+    return vetor;
 }
 
 static inline attribute(nonnull)
@@ -216,36 +190,36 @@ void min_heapify(double *vetor, size_t tam, size_t no) {
 }
 
 static attribute(nonnull)
-void build_min_heap(array_t *array) {
-    size_t n = array->tam;
+void build_min_heap(double *array, size_t n) {
     for (size_t i = (n+1)/2; i > 0; i--) {
-        min_heapify(array->dado, n, i-1);
+        min_heapify(array, n, i-1);
     }
 }
 
 static attribute(nonnull)
-double extract_min(array_t *array) {
-    double min = array->dado[0];
+double extract_min(double *array, size_t n) {
+    double min = array[0];
 
-    size_t ultimo = --array->tam;
-    array->dado[0] = array->dado[ultimo];
-    min_heapify(array->dado, array->tam, 0);
+    array[0] = array[n - 1];
+    min_heapify(array, n - 1, 0);
 
     return min;
 }
 
 static attribute(nonnull)
-array_t *metodo_3(array_t *vetor, size_t k) {
-    array_t *min = alloc_array(k);
+double *metodo_3(double *vetor, size_t n, size_t k) {
+    double *min = malloc(k * sizeof(double));
     if (min == NULL) return NULL;
 
-    build_min_heap(vetor);
+    build_min_heap(vetor, n);
     for (size_t i = 0; i < k; i++) {
-        min->dado[i] = extract_min(vetor);
-        vetor->dado[vetor->tam] = min->dado[i];
+        min[i] = extract_min(vetor, n - i);
     }
-    vetor->tam += k;
-    return min;
+    double *fim = vetor + (n - k);
+    memcpy(fim, min, k * sizeof(double));
+    free(min);
+
+    return fim;
 }
 
 typedef struct resultado {
@@ -261,9 +235,109 @@ resultado_t resultado_vazio(void) {
     };
 }
 
-static attribute(nonnull)
-resultado_t metodo_0(const array_t *vetor) {
-    (void) vetor;
+
+typedef enum metodo {
+    LIMITES = 0,
+    BUSCA = 1,
+    QUICKSORT = 2,
+    HEAP = 3
+} metodo_t;
+
+#undef NAN
+#define NAN nan("")
+
+typedef double *(*metodo_fn)(double *, size_t, size_t);
+
+static inline attribute(pure, nonnull)
+double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_fn metodo, metodo_t check) {
+    double *copia = malloc(n * sizeof(double));
+    if (copia == NULL) return NAN;
+
+    double ini = tempo();
+    double *resultado = metodo(copia, n, k);
+    double total = tempo() - ini;
+
+    if (resultado == NULL) {
+        free(copia);
+        return NAN;
+    }
+
+    bool ok;
+    switch (check) {
+        case BUSCA:
+        case QUICKSORT:
+        case HEAP:
+            ok = resposta_correta(vetor, n, k, resultado);
+        default:
+            ok = true;
+    }
+    free(copia);
+
+    if (!ok) {
+        fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", check, n, k);
+        return NAN;
+    }
+    return total;
+}
+
+static inline attribute(const)
+size_t proximo_falsa_pos(size_t a, double ya, size_t b, double yb) {
+    double xa = (double) a, xb = (double) b;
+
+    double xn = (yb * xa - ya * xb) / (yb - ya);
+    return (size_t) xn;
+}
+
+
+static inline attribute(pure)
+ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metodo_t m2, bool check) {
+    const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
+    metodo_fn f1 = fn[m1], f2 = fn[m2];
+    if (!check) {
+        m1 = m2 = LIMITES;
+    }
+
+    size_t ka = 1, kb = n - 1;
+    double fa = exec_metodo(vetor, n, ka, f1, m1) - exec_metodo(vetor, n, ka, f2, m2);
+    double fb = exec_metodo(vetor, n, kb, f1, m1) - exec_metodo(vetor, n, kb, f2, m2);
+    ssize_t maior1 = (fb > 0.0)? 1 : -1;
+
+    while (true) {
+        size_t kp = proximo_falsa_pos(ka, fa, kb, fb);
+        if (kp == ka || kp == kb) {
+            return maior1 * (ssize_t) kp;
+        }
+        double fp =  exec_metodo(vetor, n, kp, f1, m1) - exec_metodo(vetor, n, kp, f2, m2);
+        if (fp == 0.0) {
+            return maior1 * (ssize_t) kp;
+        } else if (fp * fa > 0.0) {
+            ka = kp;
+            fa = fp;
+        } else {
+            kb = kp;
+            fb = fp;
+        }
+    }
+}
+
+static inline attribute(const)
+size_t abs(ssize_t num) {
+    if (num < 0) {
+        return (size_t) (-num);
+    } else {
+        return (size_t) num;
+    }
+}
+
+static attribute(const, nonnull)
+resultado_t metodo_0(const double *vetor, size_t n) {
+    const bool check = true;
+    ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT, check);
+    ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP, check);
+    ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP, check);
+    size_t a12 = abs(k12), a13 = abs(k13), a23 = abs(k23);
+
+    resultado_t res; // TODO
     return resultado_vazio();
 }
 
@@ -281,19 +355,11 @@ void imprime_erro(const char prog[]) {
 	}
 }
 
-
-typedef enum metodo {
-    LIMITES = 0,
-    BUSCA = 1,
-    QUICKSORT = 2,
-    HEAP = 3
-} metodo_t;
-
 typedef struct args {
     const char *prog;
     metodo_t metodo;
-    array_t *vetor;
-    size_t k;
+    double *vetor;
+    size_t n, k;
 } args_t;
 
 static inline attribute(nonnull)
@@ -327,29 +393,31 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
         }
     }
 
-    array_t *vetor = read_array(argv[1]);
+    size_t tam;
+    double *vetor = read_array(argv[1], &tam);
     if (vetor == NULL) {
         imprime_erro(prog);
         return false;
-    } else if (vetor->tam < k) {
-        k = vetor->tam;
+    } else if (tam < k) {
+        k = tam;
         fprintf(stderr, "%s: k maior que vetor, assumindo k = %zu\n", prog, k);
     }
 
     args->prog = prog;
     args->metodo = metodo;
     args->vetor = vetor;
+    args->n = tam;
     args->k = k;
     return true;
 }
 
 static inline attribute(nonnull)
-bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double tempo) {
+bool imprime_tempo(const double *restrict vetor, double *restrict resultado, size_t n, size_t k, double tempo) {
     printf("%.6f\n", tempo);
 
-    kmin_to_file(resultado->dado, (int) resultado->tam);
+    kmin_to_file(resultado, (int) k);
 
-    int rv = resposta_correta(vetor->dado, (int) vetor->tam, (int) resultado->tam, resultado->dado);
+    int rv = resposta_correta(vetor, (int) n, (int) k, resultado);
     free(resultado);
 
     return rv == 1;
@@ -361,7 +429,7 @@ bool imprime_klimite(resultado_t res) {
         return false;
     }
 
-    printf("%c <(%zu)< %c <(%zu)< %c\n",
+    printf("%c >(%zu)< %c >(%zu)< %c\n",
         res.metodo[0], res.k1,
         res.metodo[1], res.k2,
         res.metodo[2]);
@@ -374,26 +442,26 @@ int main(int argc, const char *argv[]){
         return EXIT_FAILURE;
     }
 
-    array_t *resultado = NULL;
+    double *resultado = NULL;
     resultado_t limites = resultado_vazio();
-    double tempo_total = nan("");
+    double tempo_total = NAN;
     switch (args.metodo) {
         case LIMITES:
-            limites = metodo_0(args.vetor);
+            limites = metodo_0(args.vetor, args.n);
             break;
         case BUSCA:
             tempo();
-            resultado = metodo_1(args.vetor, args.k);
+            resultado = metodo_1(args.vetor, args.n, args.k);
             tempo_total = tempo();
             break;
         case QUICKSORT:
             tempo();
-            resultado = metodo_2(args.vetor, args.k);
+            resultado = metodo_2(args.vetor, args.n, args.k);
             tempo_total = tempo();
             break;
         case HEAP:
             tempo();
-            resultado = metodo_3(args.vetor, args.k);
+            resultado = metodo_3(args.vetor, args.n, args.k);
             tempo_total = tempo();
             break;
     }
@@ -404,7 +472,7 @@ int main(int argc, const char *argv[]){
             return EXIT_FAILURE;
         }
 
-        if (!imprime_tempo(args.vetor, resultado, tempo_total)) {
+        if (!imprime_tempo(args.vetor, resultado, args.n, args.k, tempo_total)) {
             return EXIT_FAILURE;
         }
     } else if (!imprime_klimite(limites)) {
