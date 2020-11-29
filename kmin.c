@@ -244,7 +244,7 @@ array_t *metodo_3(array_t *vetor, size_t k) {
         min->dado[i] = extract_min(vetor);
         vetor->dado[vetor->tam] = min->dado[i];
     }
-    vetor->tam += 1;
+    vetor->tam += k;
     return min;
 }
 
