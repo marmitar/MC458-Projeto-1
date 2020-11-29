@@ -8,8 +8,8 @@
 
 
 
-static inline __attribute__((nonnull(2)))
-int run(const char *file, const char *prog, char sep, int prec, FILE *out) {
+static inline __attribute__((nonnull(2, 3)))
+int run(const char *file, const char *prog, const char *sep, int prec) {
 	FILE *input = (file == NULL)? stdin : fopen(file, "rb");
 	if (input == NULL) {
 		perror(prog);
@@ -19,18 +19,17 @@ int run(const char *file, const char *prog, char sep, int prec, FILE *out) {
 	double number;
 	size_t rv = fread_unlocked(&number, sizeof(double), 1, input);
 	if (rv == 0) {
-		fprintf(out, "(empty)\n");
 		if (file != NULL) fclose(input);
-		return EXIT_SUCCESS;
+		return (printf("(empty)\n") < 0)? EXIT_FAILURE : EXIT_SUCCESS;
 	}
-	if (fprintf(out, "%.*lf", prec, number) < 0) {
+	if (printf("%.*lf", prec, number) < 0) {
 		perror(prog);
 		if (file != NULL) fclose(input);
 		return EXIT_FAILURE;
 	}
 
 	while ((rv = fread_unlocked(&number, sizeof(double), 1, input)) > 0) {
-		if (fprintf(out, "%c%.*lf", sep, prec, number) < 0) {
+		if (printf("%s%.*lf", sep, prec, number) < 0) {
 			perror(prog);
 			if (file != NULL) fclose(input);
 			return EXIT_FAILURE;
@@ -38,7 +37,7 @@ int run(const char *file, const char *prog, char sep, int prec, FILE *out) {
 	}
 	if (file != NULL) fclose(input);
 
-	if (fprintf(out, "\n") < 0) {
+	if (printf("\n") < 0) {
 		perror(prog);
 		return EXIT_FAILURE;
 	}
@@ -65,17 +64,13 @@ int parse_prec(const char *restrict text, const char *restrict prog) {
 
 int main(int argc, char *const *argv) {
 	const char *prog = argv[0];
-	const char *out = NULL;
-	char sep = '\n';
+	const char *sep = "\n";
 	int precision = 2;
 
-	for (int c; (c = getopt(argc, argv, "so:p:")) != -1;) {
+	for (int c; (c = getopt(argc, argv, "s::p:")) != -1;) {
 		switch (c) {
 			case 's':
-				sep = ' ';
-				break;
-			case 'o':
-				out = optarg;
+				sep = (optarg != NULL)? optarg : " ";
 				break;
 			case 'p':
 				precision = parse_prec(optarg, prog);
@@ -89,18 +84,14 @@ int main(int argc, char *const *argv) {
 				abort();
 		}
 	}
-	if (out != NULL && strcmp("-", out) == 0) {
-		out = NULL;
-	}
-	FILE *output = (out == NULL)? stdout : fopen(out, "w");
 
 	if (optind >= argc) {
-		return run("kmin.out", prog, sep, precision, output);
+		return run("kmin.out", prog, sep, precision);
 	}
 	for (int i = optind; i < argc; i++) {
 		const char *in = (strcmp("-", argv[i]) != 0)? argv[i] : NULL;
 
-		int rv = run(in, prog, sep, precision, output);
+		int rv = run(in, prog, sep, precision);
 		if (rv != EXIT_SUCCESS) return rv;
 	}
 	return EXIT_SUCCESS;
