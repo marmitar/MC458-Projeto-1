@@ -158,17 +158,17 @@ array_t *copy_array(const array_t *array, size_t max) {
     array_t *copia = alloc_array(tam);
     if (copia == NULL) return NULL;
 
-    memcpy(copia->dado, array->dado, tam);
+    memcpy(copia->dado, array->dado, tam * sizeof(double));
     return copia;
 }
 
 static attribute(nonnull)
 array_t *metodo_1(array_t *vetor, size_t k) {
     for (size_t i = 0; i < k; i++) {
-        size_t min_idx = k;
-        double min_val = vetor->dado[k];
+        size_t min_idx = i;
+        double min_val = vetor->dado[i];
 
-        for (size_t j = k+1; j < vetor->tam; j++) {
+        for (size_t j = i+1; j < vetor->tam; j++) {
             double val = vetor->dado[j];
 
             if (val < min_val) {
@@ -176,8 +176,8 @@ array_t *metodo_1(array_t *vetor, size_t k) {
                 min_val = val;
             }
         }
-        vetor->dado[min_idx] = vetor->dado[k];
-        vetor->dado[k] = min_val;
+        vetor->dado[min_idx] = vetor->dado[i];
+        vetor->dado[i] = min_val;
     }
 
     return copy_array(vetor, k);
@@ -185,21 +185,21 @@ array_t *metodo_1(array_t *vetor, size_t k) {
 
 static attribute(nonnull)
 array_t *metodo_2(array_t *vetor, size_t k) {
-    quick_sort(vetor->dado, (int) k);
+    quick_sort(vetor->dado, (int) vetor->tam);
     return copy_array(vetor, k);
 }
 
 static inline attribute(nonnull)
 void min_heapify(double *vetor, size_t tam, size_t no) {
-    size_t esq = 2 * no + 1;
-    size_t dir = 2 * no + 2;
-
     do {
+        size_t esq = 2 * no + 1;
+        size_t dir = 2 * no + 2;
+
         size_t menor = no;
         if (esq < tam && vetor[esq] < vetor[no]) {
             menor = esq;
         }
-        if (dir < tam && vetor[dir] < vetor[no]) {
+        if (dir < tam && vetor[dir] < vetor[menor]) {
             menor = dir;
         }
 
@@ -219,7 +219,7 @@ static attribute(nonnull)
 void build_min_heap(array_t *array) {
     size_t n = array->tam;
     for (size_t i = (n+1)/2; i > 0; i--) {
-        min_heapify(array->dado, n, i);
+        min_heapify(array->dado, n, i-1);
     }
 }
 
@@ -227,9 +227,9 @@ static attribute(nonnull)
 double extract_min(array_t *array) {
     double min = array->dado[0];
 
-    size_t ultimo = array->tam--;
+    size_t ultimo = --array->tam;
     array->dado[0] = array->dado[ultimo];
-    min_heapify(array->dado, ultimo, 0);
+    min_heapify(array->dado, array->tam, 0);
 
     return min;
 }
@@ -241,10 +241,10 @@ array_t *metodo_3(array_t *vetor, size_t k) {
 
     build_min_heap(vetor);
     for (size_t i = 0; i < k; i++) {
-        min->dado[k] = extract_min(vetor);
-        vetor->dado[vetor->tam] = min->dado[k];
+        min->dado[i] = extract_min(vetor);
+        vetor->dado[vetor->tam] = min->dado[i];
     }
-    vetor->tam += k;
+    vetor->tam += 1;
     return min;
 }
 
@@ -347,9 +347,9 @@ static inline attribute(nonnull)
 bool imprime_tempo(array_t *restrict vetor, array_t *restrict resultado, double tempo) {
     printf("%.6f\n", tempo);
 
-    kmin_to_file(resultado->dado, resultado->tam);
+    kmin_to_file(resultado->dado, (int) resultado->tam);
 
-    int rv = resposta_correta(vetor->dado, vetor->tam, resultado->tam, resultado->dado);
+    int rv = resposta_correta(vetor->dado, (int) vetor->tam, (int) resultado->tam, resultado->dado);
     free(resultado);
 
     return rv == 1;
@@ -397,7 +397,6 @@ int main(int argc, const char *argv[]){
             tempo_total = tempo();
             break;
     }
-    free(args.vetor);
 
     if (!isnan(tempo_total)) {
         if (resultado == NULL) {
@@ -406,13 +405,13 @@ int main(int argc, const char *argv[]){
         }
 
         if (!imprime_tempo(args.vetor, resultado, tempo_total)) {
-            fprintf(stderr, "RESULTADO ERRADO: %s %s %s %s\n", argv[0], argv[1], argv[2], argv[3]);
             return EXIT_FAILURE;
         }
     } else if (!imprime_klimite(limites)) {
         imprime_erro(args.prog);
         return EXIT_FAILURE;
     }
+    free(args.vetor);
 
     return EXIT_SUCCESS;
 }
