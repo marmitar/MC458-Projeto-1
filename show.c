@@ -53,10 +53,10 @@ int parse_prec(const char *restrict text, const char *restrict prog) {
 		perror(prog);
 		return -1;
 	} else if (num < 0 || num > INT_MAX) {
-		fprintf(stderr, "%s: invalid precision range for option -p\n", prog);
+		fprintf(stderr, "%s: invalid precision range -- 'p'\n", prog);
 		return -1;
 	} else if (end != NULL && *end != '\0') {
-		fprintf(stderr, "%s: argument '%s' is invalid for option -p\n", prog, text);
+		fprintf(stderr, "%s: invalid argument -- 'p'\n", prog);
 		return -1;
 	}
 
