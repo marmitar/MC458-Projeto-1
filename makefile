@@ -14,7 +14,8 @@ WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
 CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL) $(OPTFL)
 
 # SOURCE
-SRC := kmin.$(LANG) rotinas_$(LANG).o
+ROTINA ?= rotinas_$(LANG).o
+SRC := kmin.$(LANG) $(ROTINA)
 # ARTIFACT
 PROG := kmin
 
@@ -37,6 +38,9 @@ clean:
 # BUILDING
 $(PROG): $(SRC)
 	$(CC) $(CFLAGS) $^ -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 %: %.c
 	$(CC) $(CFLAGS) $^ -o $@

@@ -4,6 +4,7 @@ kmin.out
 show
 gen
 resultados.dat
+rotinas
 .vscode
 valgrind.txt
 *.valgrind
