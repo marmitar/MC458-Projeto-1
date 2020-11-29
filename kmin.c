@@ -498,7 +498,6 @@ int main(int argc, const char *argv[]){
 			break;
 	}
 
-	int ret = EXIT_SUCCESS;
 	if (!isnan(tempo_total)) {
 		if (resultado == NULL) {
 			imprime_erro(args.prog);
