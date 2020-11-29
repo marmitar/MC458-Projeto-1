@@ -256,6 +256,7 @@ double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_t me
 
 	double *copia = malloc(n * sizeof(double));
 	if (copia == NULL) return NAN;
+	memcpy(copia, vetor, n * sizeof(double));
 
 	double ini = tempo();
 	double *resultado = fn[metodo](copia, n, k);
