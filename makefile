@@ -8,9 +8,10 @@ else
 endif
 # OPTIONS
 LEVEL ?= 3
-DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=1 -ffast-math -march=native -mtune=native -pipe -fno-plt
+DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=0
+OPTFL ?= -ffast-math -march=native -mtune=native -pipe -fno-plt
 WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
-CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL)
+CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL) $(OPTFL)
 
 # SOURCE
 SRC := kmin.$(LANG) rotinas_$(LANG).o

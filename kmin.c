@@ -254,6 +254,10 @@ static inline attribute(pure, nonnull)
 double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
 	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
 
+	if (k >= n) {
+		fprintf(stderr, "ERR: k >= n,  k = %zu, n = %zu\n", k, n);
+	}
+
 	double *copia = malloc(n * sizeof(double));
 	if (copia == NULL) return NAN;
 	memcpy(copia, vetor, n * sizeof(double));
@@ -261,19 +265,22 @@ double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
 	tempo();
 	double *resultado = fn[metodo](copia, n, k);
 	double total = tempo();
-	free(copia);
 
 	if (resultado == NULL) {
+		free(copia);
 		return NAN;
 	}
 
 #ifdef CHECA_METODO_ZERO
 	if (!resposta_correta(vetor, n, k, resultado)) {
-		fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", metodo, n, k);
+		fprintf(stderr, "PROBLEMA NO METODO %d: n = %zu, k = %zu\n", metodo, n, k);
 		errno = RESERR;
+
+		free(copia);
 		return NAN;
 	}
 #endif
+	free(copia);
 	return total;
 }
 
@@ -292,6 +299,12 @@ ssize_t falsa_posicao(const double *vetor, size_t n, metodo_t m1, metodo_t m2) {
 	double fa = exec_metodo(vetor, n, ka, m1) - exec_metodo(vetor, n, ka, m2);
 	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
 	if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
+	if (fa * fb >= 0) {
+		fprintf(stderr, "PROBLEMA NOS MÉTODOS %d, %d: ", m1, m2);
+		fprintf(stderr, "impossível achar limites, ");
+		fprintf(stderr, "ka = %zu, fa = %lf, kb = %zu, fb = %lf\n", ka, fa, kb, fb);
+		return 0;
+	}
 
 	ssize_t maior1 = (fb > 0.0)? -1 : 1;
 	while (true) {
