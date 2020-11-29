@@ -62,21 +62,35 @@ int parse_prec(const char *restrict text, const char *restrict prog) {
 	return (int) num;
 }
 
+static __attribute__((nonnull))
+void usage(const char prog[]) {
+	printf("Uso: %s [-p PREC] [-s [SEP]] [entrada ...]\n", prog);
+	printf("Opções:\n");
+	printf("  -h          Mensagem de ajuda.\n");
+	printf("  -p PREC     Precisão dos valores. (PADRÃO: 2)\n");
+	printf("  -s [SEP]    Muda o separador de valores.\n");
+	printf("              (PADRÃO: quebra de linha)\n");
+	printf("              (SEM ARGUMENTO: espaço)\n");
+}
+
 int main(int argc, char *const *argv) {
 	const char *prog = argv[0];
 	const char *sep = "\n";
 	int precision = 2;
 
-	for (int c; (c = getopt(argc, argv, "s::p:")) != -1;) {
+	for (int c; (c = getopt(argc, argv, "p:s::h")) != -1;) {
 		switch (c) {
-			case 's':
-				sep = (optarg != NULL)? optarg : " ";
-				break;
+			case 'h':
+				usage(prog);
+				return EXIT_SUCCESS;
 			case 'p':
 				precision = parse_prec(optarg, prog);
 				if (precision < 0) {
 					return EXIT_FAILURE;
 				}
+				break;
+			case 's':
+				sep = (optarg != NULL)? optarg : " ";
 				break;
 			case '?':
 				return EXIT_FAILURE;
