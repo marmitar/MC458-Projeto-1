@@ -251,30 +251,24 @@ resultado_t resultado_vazio(void) {
 typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
 static inline attribute(pure, nonnull)
-double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_fn metodo, metodo_t check) {
+double exec_metodo(const double *restrict vetor, size_t n, size_t k, metodo_t metodo) {
+	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
+
 	double *copia = malloc(n * sizeof(double));
 	if (copia == NULL) return NAN;
 
 	double ini = tempo();
-	double *resultado = metodo(copia, n, k);
+	double *resultado = fn[metodo](copia, n, k);
 	double total = tempo() - ini;
-
-	bool ok;
-	switch (check) {
-		case BUSCA:
-		case QUICKSORT:
-		case HEAP:
-			ok = resposta_correta(vetor, n, k, resultado);
-		default:
-			ok = true;
-	}
 	free(copia);
 
-	if (!ok) {
-		fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", check, n, k);
+#ifdef CHECA_METODO_ZERO
+	if (!resposta_correta(vetor, n, k, resultado)) {
+		fprintf(stderr, "PROBLEMA NO METODO %d; n = %zu, k = %zu\n", metodo, n, k);
 		errno = RESERR;
 		return NAN;
 	}
+#endif
 	return total;
 }
 
@@ -288,16 +282,10 @@ size_t proximo_falsa_pos(size_t a, double ya, size_t b, double yb) {
 
 
 static inline attribute(pure)
-ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metodo_t m2, bool check) {
-	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
-	metodo_fn f1 = fn[m1], f2 = fn[m2];
-	if (!check) {
-		m1 = m2 = 0;
-	}
-
+ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metodo_t m2) {
 	size_t ka = 1, kb = n - 1;
-	double fa = exec_metodo(vetor, n, ka, f1, m1) - exec_metodo(vetor, n, ka, f2, m2);
-	double fb = exec_metodo(vetor, n, kb, f1, m1) - exec_metodo(vetor, n, kb, f2, m2);
+	double fa = exec_metodo(vetor, n, ka, m1) - exec_metodo(vetor, n, ka, m2);
+	double fb = exec_metodo(vetor, n, kb, m1) - exec_metodo(vetor, n, kb, m2);
 	if (isnan(fa) || isnan(fb)) return SSIZE_MAX;
 
 	ssize_t maior1 = (fb > 0.0)? 1 : -1;
@@ -306,7 +294,7 @@ ssize_t falsa_posicao(const double *restrict vetor, size_t n, metodo_t m1, metod
 		if (kp == ka || kp == kb) {
 			return maior1 * (ssize_t) kp;
 		}
-		double fp = exec_metodo(vetor, n, kp, f1, m1) - exec_metodo(vetor, n, kp, f2, m2);
+		double fp = exec_metodo(vetor, n, kp, m1) - exec_metodo(vetor, n, kp, m2);
 		if (isnan(fp)) {
 			return SSIZE_MAX;
 		} else if (fp == 0.0) {
@@ -332,17 +320,11 @@ size_t abs(ssize_t num) {
 
 static attribute(const, nonnull)
 resultado_t metodo_0(const double *vetor, size_t n) {
-#ifdef CHECK_METODOS
-	const bool check = true;
-#else
-	const bool check = false;
-#endif
-
-	ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT, check);
+	ssize_t k12 = falsa_posicao(vetor, n, BUSCA, QUICKSORT);
 	if (k12 == SSIZE_MAX) return resultado_vazio();
-	ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP, check);
+	ssize_t k13 = falsa_posicao(vetor, n, BUSCA, HEAP);
 	if (k13 == SSIZE_MAX) return resultado_vazio();
-	ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP, check);
+	ssize_t k23 = falsa_posicao(vetor, n, QUICKSORT, HEAP);
 	if (k23 == SSIZE_MAX) return resultado_vazio();
 
 	size_t a12 = abs(k12), a13 = abs(k13), a23 = abs(k23);
