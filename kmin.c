@@ -432,13 +432,8 @@ bool parse_opt(int argc, const char *argv[], args_t *restrict args) {
 static inline attribute(nonnull)
 bool imprime_tempo(const double *restrict vetor, double *restrict resultado, size_t n, size_t k, double tempo) {
 	printf("%.6f\n", tempo);
-
 	kmin_to_file(resultado, (int) k);
-
-	int rv = resposta_correta(vetor, (int) n, (int) k, resultado);
-	free(resultado);
-
-	return rv == 1;
+	return resposta_correta(vetor, (int) n, (int) k, resultado) != 0;
 }
 
 static inline
