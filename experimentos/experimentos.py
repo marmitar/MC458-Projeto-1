@@ -87,9 +87,9 @@ def write_row(f, k, t1, t2, t3):
         else:
             st[i] = '--------'
 
-        j, k = (i % 3) + 1, ((i + 1) % 3) + 1
+        j, l = (i % 3) + 1, ((i + 1) % 3) + 1
 
-        if t[i] < t[j] and t[i] < t[k]:
+        if t[i] < t[j] and t[i] < t[l]:
             m = '*'
         else:
             m = ' '

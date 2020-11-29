@@ -257,14 +257,10 @@ typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
 static inline attribute(pure, nonnull)
 double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
-	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
 	if (metodo == BUSCA && k * n >= MAX_BUSCA) {
 		return TEMPO_MAX_BUSCA;
 	}
-
-	if (k > n) {
-		fprintf(stderr, "ERR: k >= n,  k = %zu, n = %zu\n", k, n);
-	}
+	const metodo_fn fn[] = {[BUSCA] = metodo_1, [QUICKSORT] = metodo_2, [HEAP] = metodo_3};
 
 	double *copia = malloc(n * sizeof(double));
 	if (copia == NULL) return NAN;
