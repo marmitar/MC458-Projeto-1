@@ -443,7 +443,7 @@ bool imprime_klimite(resultado_t res) {
 		return false;
 	}
 
-	printf("%c >(%zu)< %c >(%zu)< %c\n",
+	printf("M.%d >(%zu)< M.%d >(%zu)< M.%d\n",
 		res.metodo[0], res.k1,
 		res.metodo[1], res.k2,
 		res.metodo[2]);
