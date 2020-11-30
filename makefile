@@ -11,7 +11,7 @@ LEVEL ?= 3
 DEBUG ?= -DNDEBUG -D_FORTIFY_SOURCE=0
 OPTFL ?= -march=native -mtune=native -pipe -fno-plt
 WARNINGS ?= -Wall -Werror -Wpedantic -Wunused-result
-CFLAGS ?= -std=gnu11 $(WARNINGS) $(DEBUG) -O$(LEVEL) $(OPTFL)
+CFLAGS ?= -std=c99 $(WARNINGS) $(DEBUG) -O$(LEVEL) $(OPTFL)
 
 # SOURCE
 ROTINA ?= rotinas_$(LANG).o

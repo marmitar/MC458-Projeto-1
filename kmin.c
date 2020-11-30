@@ -400,6 +400,8 @@ int main(int argc, const char *argv[]){
 // resultado do tempo se `k * n` for maior
 #define TEMPO_MAX_BUSCA  3.6E3
 
+typedef intptr_t ssize_t;
+
 // Ponteiro para os métodos 1, 2 ou 3.
 typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
