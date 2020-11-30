@@ -6,6 +6,24 @@
 #include <sys/time.h>
 
 
+static
+int dblcmp(const void *a, const void *b) {
+    double da = *(double *)a, db = *(double *)b;
+    if (da < db) {
+        return -1;
+    } else if (da > db) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+extern inline
+void quick_sort(double *v, int n) {
+    qsort(v, n, sizeof(double), dblcmp);
+}
+
+
 static inline
 void min_heapify(double *vetor, size_t tam, size_t no) {
 	do {
@@ -63,15 +81,23 @@ double *heap_select(const double *v, int n, int k) {
     return min;
 }
 
+
 #define DIFF 1E-5
 
 static inline
 bool veccmp(const double *v, const double *r, int k) {
+    size_t tam = k * sizeof(double);
+    double *a = memcpy(malloc(tam), r, tam);
+    quick_sort(a, k);
+
     for (int i = 0; i < k; i++) {
-        if (fabs(v[i] - r[i]) >= DIFF) {
+        if (fabs(v[i] - a[i]) >= DIFF) {
+            fprintf(stderr, "i = %d, k = %d, vi = %lf, ri = %lf, ai = %lf\n", i, k, v[i], r[i], a[i]);
+            free(a);
             return false;
         }
     }
+    free(a);
     return true;
 }
 
@@ -94,25 +120,14 @@ int resposta_correta(const double *v, int n, int k, const double *r) {
         free(min);
         return 1;
     }
-    fprintf(stderr, "Resposta incorreta detectada");
-    fprintf(stderr, "Resposta do seu algoritmo:");
+    fprintf(stderr, "Resposta incorreta detectada\n");
+    fprintf(stderr, "Resposta do seu algoritmo:\n");
     printvec(r, k);
-    fprintf(stderr, "Resposta esperada:");
+    fprintf(stderr, "Resposta esperada:\n");
     printvec(min, k);
 
     free(min);
     return 0;
-}
-
-
-static
-int dblcmp(const void *a, const void *b) {
-    double da = *(double *)a, db = *(double *)b;
-    return da - db;
-}
-
-void quick_sort(double *v, int n) {
-    qsort(v, n, sizeof(double), dblcmp);
 }
 
 
