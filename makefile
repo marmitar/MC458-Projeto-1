@@ -28,7 +28,7 @@ run: $(PROG)
 	./$(PROG)
 
 debug: LEVEL = g
-debug: DEBUG = -DDEBUG -D_FORTIFY_SOURCE=2 -ggdb3
+debug: DEBUG = -DDEBUG -D_FORTIFY_SOURCE=2 -DCHECA_METODOS -ggdb3
 debug: OPTFL = -march=native
 debug: clean all
 
