@@ -1,6 +1,8 @@
 /**
  * Tiago de Paula Alves - RA187679
  * Projeto de Algoritmo com Implementação 1
+ *
+ * Código implementado em C99.
  * * * * * * * * * * * * * * * * * * * * * */
 #include <stddef.h>
 #include <stdlib.h>
@@ -341,10 +343,10 @@ resultado_t metodo_0(const double *vetor, size_t n)
 attribute(const, nonnull);
 static
 double *metodo_1(double *vetor, size_t n, size_t _k)
-attribute(nonnull, returns_nonnull);
+attribute(nonnull);
 static
 double *metodo_2(double *vetor, size_t n, size_t _k)
-attribute(nonnull, returns_nonnull);
+attribute(nonnull);
 static
 double *metodo_3(double *vetor, size_t n, size_t _k)
 attribute(nonnull);
@@ -598,7 +600,7 @@ resultado_t metodo_0(const double *vetor, size_t n) {
 /* * * * * * */
 /* MÉTODO  1 */
 
-static attribute(nonnull, returns_nonnull)
+static attribute(nonnull)
 /**
  * Busca linear de cada i-ésimo menor.
  */
@@ -628,7 +630,7 @@ double *metodo_1(double *vetor, size_t n, size_t k) {
 /* * * * * * */
 /* MÉTODO  2 */
 
-static attribute(nonnull, returns_nonnull)
+static attribute(nonnull)
 /**
  * Quicksort para achar os k menores.
  */
