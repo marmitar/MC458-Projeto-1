@@ -220,23 +220,43 @@ bool imprime_tempo(const double *restrict vetor, double *restrict resultado, siz
 #endif
 }
 
+static inline attribute(const)
+/**
+ * Número de dígitos decimais de um número.
+ */
+int digitos(size_t num) {
+	int cnt = 0;
+	while (num > 0) {
+		num /= 10;
+		cnt++;
+	}
+	return cnt;
+}
+
 static inline
 /**
  * Saída do método 0.
  */
-bool imprime_k(resultado_t res) {
+bool imprime_k(resultado_t res, size_t n) {
 	// checa resultado com erro
 	for (size_t i = 0; i < 3; i++) {
 		if (res.metodo[i] == LIMITES) {
 			return false;
 		}
 	}
+	// casas para alinhamento dos limites
+	int prec = digitos(n);
+	// limites dos intervalos
+	size_t k[] = {0, res.k1, res.k2, n};
 
-	// imprime os métodos e os limites
-	printf("M.%d >(%zu)< M.%d >(%zu)< M.%d\n",
-		res.metodo[0], res.k1,
-		res.metodo[1], res.k2,
-		res.metodo[2]);
+	printf("Vetor de tamanho  %zu\n\n", n);
+	// tabela com os métodos e os limites
+	printf("Método    Intervalo Eficiente\n");
+	for (unsigned i = 0; i < 3; i++) {
+		printf("     %d    %*zu até %*zu\n",
+			res.metodo[i], prec, k[i], prec, k[i+1]);
+	}
+
 	return true;
 }
 
@@ -366,15 +386,15 @@ int main(int argc, const char *argv[]){
 
 	// tempo medido: foi executado método 1, 2 ou 3
 	if (!isnan(tempo_total)) {
-		// método retornou erro
 		if (resultado == NULL) {
+			// método retornou erro
 			imprime_erro(args.prog);
 			free(args.vetor);
 			return EXIT_FAILURE;
 		}
 
-		// método com resultado errado
 		if (!imprime_tempo(args.vetor, resultado, args.n, args.k, tempo_total)) {
+			// método com resultado errado
 			free(args.vetor);
 			return EXIT_FAILURE;
 		}
@@ -382,8 +402,9 @@ int main(int argc, const char *argv[]){
 	// tempo não medido: método 0
 	} else {
 		free(args.vetor);
-		// erro na medida dos limites
-		if (!imprime_k(limites)) {
+
+		if (!imprime_k(limites, args.n)) {
+			// erro na medida dos limites
 			imprime_erro(args.prog);
 			return EXIT_FAILURE;
 		}
