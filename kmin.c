@@ -428,7 +428,7 @@ typedef attribute(nonnull) double *(*metodo_fn)(double *, size_t, size_t);
 
 static inline attribute(pure, nonnull)
 /**
- * Executa um metódo e retorna o tempo de execução ou NaN em caso de erro.
+ * Executa um método e retorna o tempo de execução ou NaN em caso de erro.
  */
 double exec_metodo(const double *vetor, size_t n, size_t k, metodo_t metodo) {
 	// método 1 demora muito para valores grandes de k e n
