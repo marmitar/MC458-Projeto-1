@@ -1,6 +1,6 @@
 \section{Problema da Seleção}
 
-Obtenção dos $1 \leq k \leq n$ menores elementos de um dado vetor $V$ de tamanho $n$.
+Obtenção dos $1 \leq k \leq n$ menores elementos de um dado vetor $V$ de tamanho $n$, em ordem crescente.
 
 \subsection{Método 1: Busca dos Menores Elementos}
 
@@ -13,3 +13,30 @@ Para o segundo método foi utilizada a função dada que realiza a ordenação c
 \subsection{Método 3: Heap de Mínimo}
 
 O último método se baseia na construção de um heap de mínimo, onde as seleções de menor elemento podem ser feitas de forma eficiente. Assim, o heap pode ser montado a partir de $V$ em tempo $\Theta(n)$ e as extrações do mínimo são feitas em $O(\lg n)$. Então, a complexidade desse método fica $T_3(n, k) = \Theta(n) + \sum_{i = 0}^{k - 1} O(\lg (n - i)) = O(n + k \lg n)$, que o esperado já que os elementos de $V$ são em sua maioria distintos. No pior caso, podemos dizer também que $T_3(n) \in O(n \lg n)$.
+
+\section{Eficiência dos Métodos}
+
+Para valores pequenos de $k$, o algoritmo mais eficiente foi o de busca linear, do método 1. Nessa faixa de entrada, podemos considerar $k$ constante e, portanto, o tempo de execução desse algoritmo seria de ordem $\Theta(n)$. O mesmo valor para o método 3, no entanto, tanto a construção do heap quanto a extração do mínimo requerem maior movimentação dos elementos, além de acessos em posições não-sequenciais, o que o torna menos eficiente que uma busca linear.
+
+Na faixa de valores intermediários, o vencedor é heap de mínimo, do método 3. Nesse intervalo, a construção do heap passa a importar menos para o tempo do algoritmo como um todo, então podemos considerar o tempo como $O(k \lg n)$ amortizado, que é bem mais eficiente que o $O(k n)$ do método 1.
+
+Para valores de $k$ muito próximos de $n$, como os $k$ menores elementos devem ser encontrados em ordem crescente, o algoritmo se torna basicamente uma ordenação. Nesse caso, o método 3 é comparável a um HeapSort \textit{out-of-place}, com complexidade $O(n \lg n)$. No entanto, o QuickSort acaba sendo mais eficiente na prática, com o caso médio $O(n \lg n)$, mas sem necessitar modificar o vetor a priori, como o HeapSort, e com acessos sequenciais, que auxilia na otimização do compilador e no uso eficiente do cache.
+
+\section{Resultados}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ccc}
+        \toprule
+        Execução & $k_1$ & $k_2$ \\
+        \midrule
+        1 & 130 & 495447 \\
+        2 & 129 & 500474 \\
+        3 & 131 & 508571 \\
+        \midrule
+        Média & 130 & 501497 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Os valores foram encontrados com o método 0, implementado pelo método da falsa posição, que é análogo a uma busca interpolada.
